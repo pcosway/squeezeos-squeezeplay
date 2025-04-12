@@ -398,7 +398,7 @@ function t_setResponseBody(self, data)
 			self.t_httpResponse.body       = ""
 			self.t_httpResponse.done       = false
 
-			jive.net.SocketHttp(jnt, parsed.host, parsed.port, url):fetch(self)
+			jive.net.SocketHttp(jnt, parsed.host, parsed.port, parsed.host):fetch(self)
 
 		-- handle errors
 		else
