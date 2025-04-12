@@ -744,7 +744,7 @@ sinkt["jive-by-chunk"] = function(request)
 
 		if not chunk or src_err == "done" then
 			log:debug("SocketHttp.jive-by-chunk.sink: done")
-			request:t_setResponseBody(nil)
+--			request:t_setResponseBody(nil)
 			return nil
 		end
 	
