@@ -714,7 +714,7 @@ function openAlarmWindow(self)
 
 	window:ignoreAllInputExcept(
 		--these actions are not ignored
-		{ 'go', 'back', 'power', 'mute', 'volume_up', 'volume_down', 'pause', 'jump_fwd'}, 
+		{ 'go', 'back', 'power', 'mute', 'volume_up', 'volume_down', 'pause', 'jump_fwd', 'jump_rew'}, 
 		-- consumeAction is the callback issued for all "ignored" input
 		consumeAction 
 	)
