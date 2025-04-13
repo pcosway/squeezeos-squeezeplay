@@ -362,44 +362,46 @@ function t_setResponseBody(self, data)
 		elseif (code == 301 or code == 302 or code == 307) and self.t_httpRequest.method == 'GET' and
 		       (not self.redirect or self.redirect < 5) then
 
-			local redirectUrl = self:t_getResponseHeader("Location")
-			log:info(code, " redirect: ", redirectUrl)
+			-- do not process redirect until the full header has been read 
+			if not data then
+				local redirectUrl = self:t_getResponseHeader("Location")
+				log:info(code, " redirect: ", redirectUrl)
 
-			-- recreate headers and parsed uri
-			local defaults = {
-				host   = "",
-				port   = 80,
-				path   = "/",
-				scheme = "http"
-			}
-			local parsed = url.parse(redirectUrl, defaults)
+				-- recreate headers and parsed uri
+				local defaults = {
+					host   = "",
+					port   = 80,
+					path   = "/",
+					scheme = "http"
+				}
+				local parsed = url.parse(redirectUrl, defaults)
 			
-			local defHeaders = {}
-			if self.options and self.options.headers then
-				for k, v in pairs(self.options.headers) do
-					defHeaders[k] = v
+				local defHeaders = {}
+				if self.options and self.options.headers then
+					for k, v in pairs(self.options.headers) do
+						defHeaders[k] = v
+					end
 				end
-			end
-			if parsed.host ~= "" then
-				defHeaders["Host"] = parsed.host
-				if parsed.port ~= 80 then
-					defHeaders["Host"] = defHeaders["Host"] .. ':' .. parsed.port
+				if parsed.host ~= "" then
+					defHeaders["Host"] = parsed.host
+					if parsed.port ~= 80 then
+						defHeaders["Host"] = defHeaders["Host"] .. ':' .. parsed.port
+					end
 				end
+
+				self.redirect = (self.redirect or 0) + 1
+
+				self.t_httpRequest.headers     = defHeaders
+				self.t_httpRequest.uri         = parsed
+
+				self.t_httpResponse.statusCode = false
+				self.t_httpResponse.statusLine = false
+				self.t_httpResponse.headers    = false
+				self.t_httpResponse.body       = ""
+				self.t_httpResponse.done       = false
+
+				jive.net.SocketHttp(jnt, parsed.host, parsed.port, parsed.host):fetch(self)
 			end
-
-			self.redirect = (self.redirect or 0) + 1
-
-			self.t_httpRequest.headers     = defHeaders
-			self.t_httpRequest.uri         = parsed
-
-			self.t_httpResponse.statusCode = false
-			self.t_httpResponse.statusLine = false
-			self.t_httpResponse.headers    = false
-			self.t_httpResponse.body       = ""
-			self.t_httpResponse.done       = false
-
-			jive.net.SocketHttp(jnt, parsed.host, parsed.port, url):fetch(self)
-
 		-- handle errors
 		else
 			if not err then
