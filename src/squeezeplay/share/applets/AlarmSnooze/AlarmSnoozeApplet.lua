@@ -616,12 +616,15 @@ function openAlarmWindow(self)
 
 	-- if UI is controlling a different player, switch to the local player
 	local currentPlayer = Player:getCurrentPlayer()
-
+	
 	if currentPlayer ~= self.localPlayer then
 		log:warn("*** Alarm: openAlarmWindow: switching squeezeplay control to local player: ", self.localPlayer, " from current player: ", currentPlayer)
 		appletManager:callService("setCurrentPlayer", self.localPlayer)
 	end
-
+	
+	-- save current state of player to report to server
+	local playermode = self.localPlayer:getPlayMode()
+	
 	appletManager:callService("deactivateScreensaver")
 	
 	-- this method is called when the alarm time is hit
@@ -752,7 +755,6 @@ function openAlarmWindow(self)
 	self.timeWidget  = label
 
 	-- notify server 
-	local playermode = currentPlayer:getPlayMode()
 	local almesg = "message:Alarm TRIGGERED mode-" .. playermode
 	local timer = Timer(1000, function()
 			self.localPlayer:send({'jivealarm', almesg })
