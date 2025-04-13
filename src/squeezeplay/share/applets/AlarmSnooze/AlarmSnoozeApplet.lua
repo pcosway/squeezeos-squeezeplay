@@ -416,6 +416,7 @@ end
 
 function soundFallbackAlarm(self)
 	log:warn("*** Alarm: soundFallbackAlarm()")
+	self.localPlayer:send({'jivealarm', 'message:Alarm FAILED - sounding FALLBACK'})
 	self.alarmVolume = 43 -- forget fade in stuff, just do it - it's an alarm!
 	-- cache previous volume setting
 	self.previousVolume = self.localPlayer:getVolume()
@@ -456,6 +457,12 @@ function _pollDecodeState(self)
 	else
 		self.failedAudioTicker = 0
 		log:warn("*** Alarm: Audio ok -> reset failedAudioTicker: ", self.failedAudioTicker)
+	end
+
+	if self.failedAudioTicker == 4 or self.failedAudioTicker == 8 then
+		self.localPlayer:stop(true)
+		self.localPlayer:play(true)
+		self.localPlayer:send({'jivealarm', 'message:Alarm FAILING - kicking server'})
 	end
 
 	if self.failedAudioTicker > 12 then
@@ -743,6 +750,13 @@ function openAlarmWindow(self)
 	window:setAlwaysOnTop(true)
 	self.alarmWindow = window
 	self.timeWidget  = label
+
+	-- notify server 
+	local playermode = currentPlayer:getPlayMode()
+	local almesg = "message:Alarm TRIGGERED mode-" .. playermode
+	local timer = Timer(1000, function()
+			self.localPlayer:send({'jivealarm', almesg })
+			end, true):start() 
 
 end
 
