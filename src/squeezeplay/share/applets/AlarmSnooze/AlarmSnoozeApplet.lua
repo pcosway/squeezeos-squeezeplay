@@ -416,6 +416,7 @@ end
 
 function soundFallbackAlarm(self)
 	log:warn("*** Alarm: soundFallbackAlarm()")
+	self.localPlayer:send({'jivealarm', 'message:Alarm FAILED - sounding FALLBACK'})
 	self.alarmVolume = 43 -- forget fade in stuff, just do it - it's an alarm!
 	-- cache previous volume setting
 	self.previousVolume = self.localPlayer:getVolume()
@@ -456,6 +457,12 @@ function _pollDecodeState(self)
 	else
 		self.failedAudioTicker = 0
 		log:warn("*** Alarm: Audio ok -> reset failedAudioTicker: ", self.failedAudioTicker)
+	end
+
+	if self.failedAudioTicker == 4 or self.failedAudioTicker == 8 then
+		self.localPlayer:stop(true)
+		self.localPlayer:play(true)
+		self.localPlayer:send({'jivealarm', 'message:Alarm FAILING - kicking server'})
 	end
 
 	if self.failedAudioTicker > 12 then
@@ -609,12 +616,15 @@ function openAlarmWindow(self)
 
 	-- if UI is controlling a different player, switch to the local player
 	local currentPlayer = Player:getCurrentPlayer()
-
+	
 	if currentPlayer ~= self.localPlayer then
 		log:warn("*** Alarm: openAlarmWindow: switching squeezeplay control to local player: ", self.localPlayer, " from current player: ", currentPlayer)
 		appletManager:callService("setCurrentPlayer", self.localPlayer)
 	end
-
+	
+	-- save current state of player to report to server
+	local playermode = self.localPlayer:getPlayMode()
+	
 	appletManager:callService("deactivateScreensaver")
 	
 	-- this method is called when the alarm time is hit
@@ -714,7 +724,7 @@ function openAlarmWindow(self)
 
 	window:ignoreAllInputExcept(
 		--these actions are not ignored
-		{ 'go', 'back', 'power', 'mute', 'volume_up', 'volume_down', 'pause' }, 
+		{ 'go', 'back', 'power', 'mute', 'volume_up', 'volume_down', 'pause', 'jump_fwd', 'jump_rew' }, 
 		-- consumeAction is the callback issued for all "ignored" input
 		consumeAction 
 	)
@@ -743,6 +753,12 @@ function openAlarmWindow(self)
 	window:setAlwaysOnTop(true)
 	self.alarmWindow = window
 	self.timeWidget  = label
+
+	-- notify server 
+	local almesg = "message:Alarm TRIGGERED mode-" .. playermode
+	local timer = Timer(1000, function()
+			self.localPlayer:send({'jivealarm', almesg })
+			end, true):start() 
 
 end
 
