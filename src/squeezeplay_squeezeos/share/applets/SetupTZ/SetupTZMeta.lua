@@ -27,23 +27,32 @@ function registerApplet(meta)
 	end
 end
 
-function notify_serverConnected(meta)
+function notify_serverConnected(meta, server)
 	-- On server connect, if the timezone still hasn't
-	-- been set, set it from SN's guess over http
+	-- been set, set it from LMS's guess over http
 	-- and unsubscribe if this succeeds
+
+	-- There is a small possibility of a race condition if more than one LMS
+	-- server becomes connected. But that won't cause harm.
 	if not squeezeos.getTimezone() then
-		local socket = SocketHttp(jnt, jnt:getSNHostname(), 80, "tzguess")
+		local socket = SocketHttp(jnt, server.ip, server.port, "tzguess")
 		local req = RequestHttp(
-			function(data) if data then
-				log:debug("Got http data for TZ >>" .. data .. "<<")
-				local success,err = squeezeos.setTimezone(data)
-				if success then
-					jnt:unsubscribe(meta)
+			function(data, err)
+				if err then
+					log:warn("Bad response from server {", server.name, "} Error:", err)
+				elseif data then
+					log:info("Got TimeZone from server {", server.name, "} : {", data, "}")
+					local success, err = squeezeos.setTimezone(data)
+					if success then
+						jnt:unsubscribe(meta)
+					else
+						log:warn("setTimezone() failed: ", err)
+					end
 				else
-					log:warn("setTimezone() failed: ", err)
+					-- no action - this is RequestHttp's final 'nil' data callback
 				end
-			end end,
-			'GET', '/public/tz'
+			end,
+			'GET', '/tz'
 		)
 		socket:fetch(req)
 	else
