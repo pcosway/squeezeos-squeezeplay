@@ -52,7 +52,7 @@ function notify_serverConnected(meta, server)
 					-- no action - this is RequestHttp's final 'nil' data callback
 				end
 			end,
-			'GET', '/tz'
+			'GET', '/time/tz'
 		)
 		socket:fetch(req)
 	else
