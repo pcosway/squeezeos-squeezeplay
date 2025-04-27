@@ -647,7 +647,9 @@ function addNowPlayingItem(self)
 		sound = 'WINDOWSHOW',
 		weight = 1,
 		callback = function(event, menuItem)
-			self:goNowPlaying(Window.transitionPushLeft)
+-- Lookup current Now Playing service to work with Custom Clock	
+--			self:goNowPlaying(Window.transitionPushLeft)
+			appletManager:callService("goNowPlaying",Window.transitionPushLeft)	
 			end
 	})
 end
@@ -1778,8 +1780,9 @@ function openScreensaver(self)
 	appletManager:callService("deactivateScreensaver") -- not needed currently, but is defensive if other cleanup gets added to deactivateScreensaver
 	appletManager:callService("restartScreenSaverTimer")
 
-	self:showNowPlaying()
-
+-- Lookup current Now Playing service to work with Custom Clock	
+--	self:showNowPlaying()
+	appletManager:callService("goNowPlaying")
 	return false
 end
 
