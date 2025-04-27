@@ -633,14 +633,14 @@ end
 
 
 function removeNowPlayingItem(self)
-	jiveMain:removeItemById('appletNowPlaying')
+	jiveMain:removeItemById('appletNowPlayingv2')
 	self.nowPlayingItem = false
 end
 
 
 function addNowPlayingItem(self)
 	jiveMain:addItem({
-		id = 'appletNowPlaying',
+		id = 'appletNowPlayingv2',
 		iconStyle = 'hm_appletNowPlaying',
 		node = 'home',
 		text = self:string('SCREENSAVER_NOWPLAYING'),
@@ -1939,7 +1939,7 @@ end
 
 function freeAndClear(self)
 	self.player = false
-	jiveMain:removeItemById('appletNowPlaying')
+	jiveMain:removeItemById('appletNowPlayingv2')
 	self:free()
 
 end
