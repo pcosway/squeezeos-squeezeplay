@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 static int squeezeos_reboot(lua_State *L)
 {
@@ -179,6 +180,9 @@ static int squeezeos_set_timezone(lua_State *L)
 {
 	const char* tz = lua_tostring(L, 1);
 	char* tzfn = malloc(21 + strlen(tz));
+	char* tzfn_canon;
+	char* tzptr;
+	struct stat statbuf;
 
 	if(!tzfn) {
 		lua_pushnil(L);
@@ -187,6 +191,37 @@ static int squeezeos_set_timezone(lua_State *L)
 	}
 	strcpy(tzfn, "/usr/share/zoneinfo/");
 	strcat(tzfn, tz);
+
+	/* Carry out some sanity checks on the provided timezone. 'tzfn' must
+	   resolve to a target tzdata file in the zoneinfo hierarchy. */
+
+	/* Resolve symlinks, etc.; fail if the target does not exist */
+	tzfn_canon = canonicalize_file_name(tzfn);
+	if(!tzfn_canon) {
+		free(tzfn);
+		lua_pushnil(L);
+		lua_pushstring(L, "Cannot locate tz data file");
+		return 2;
+	}
+	/* Require the target to fall within the zoneinfo hierarchy */
+	tzptr = strstr(tzfn_canon, "/usr/share/zoneinfo/");
+	if (tzptr != tzfn_canon) {
+		free(tzfn);
+		free(tzfn_canon);
+		lua_pushnil(L);
+		lua_pushstring(L, "tz data file is not in /usr/share/zoneinfo");
+		return 2;
+	}
+	/* Require the target to be a regular file */
+	if (stat(tzfn_canon, &statbuf) || !S_ISREG(statbuf.st_mode)) {
+		free(tzfn);
+		free(tzfn_canon);
+		lua_pushnil(L);
+		lua_pushstring(L, "tz data does not point to a file");
+		return 2;
+	}
+	/* Sanity checks passed. Proceed to create '/etc/localtime' link */
+	free(tzfn_canon);
 
 	if(unlink("/etc/localtime") && errno != ENOENT) {
 		free(tzfn);
